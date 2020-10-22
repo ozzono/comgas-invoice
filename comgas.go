@@ -1,12 +1,10 @@
-package main
+package comgas
 
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"strings"
 
 	"github.com/knq/chromedp"
@@ -37,65 +35,9 @@ type Invoice struct {
 type UserData struct {
 	CPF  string `json:"cpf"`
 	Code string `json:"code"`
-	// Name  string `json:"name"`
-}
-
-func init() {
-	flag.StringVar(&configPath, "user-data", "config.json", "Sets the path for the user data JSON file")
-}
-
-func main() {
-	flag.Parse()
-	f := NewFlow(false)
-	for i := range f.cancel {
-		defer f.cancel[i]()
-	}
-	user, err := setConfig()
-	if err != nil {
-		log.Printf("setConfig: %v", err)
-	}
-	f.User = user
-	invoice, err := f.invoiceFlow()
-	if err != nil {
-		log.Printf("invoiceFlow: %v", err)
-	}
-	log.Printf("invoice %#v", invoice)
-
 }
 
 func (flow *Flow) invoiceFlow() (Invoice, error) {
-	output := ""
-	err := chromedp.Run(flow.c,
-		chromedp.Navigate("https://virtual.comgas.com.br/#/comgasvirtual/historicoFaturas"),
-		chromedp.WaitVisible("div.dados-login"),
-		chromedp.Text(
-			`document.querySelector("#loginModal > form > div > div.header-geral > span.label-principal.ng-scope")`,
-			&output,
-			chromedp.ByJSPath,
-		),
-		chromedp.Sleep(5),
-	)
-
-	if err != nil {
-		return Invoice{}, err
-	}
-	if !strings.Contains(output, "Bem-vindo") {
-		return Invoice{}, fmt.Errorf("failed to load login page")
-	}
-
-	err = chromedp.Run(flow.c,
-		chromedp.Click(`document.querySelector("#cpf")`, chromedp.NodeVisible, chromedp.ByJSPath),
-		chromedp.SendKeys(`document.querySelector("#cpf")`, kb.End+flow.User.CPF, chromedp.ByJSPath),
-
-		chromedp.Click(`document.querySelector("#modalTxtCodigoUsuario")`, chromedp.NodeVisible, chromedp.ByJSPath),
-		chromedp.SendKeys(`document.querySelector("#modalTxtCodigoUsuario")`, kb.End+flow.User.Code, chromedp.ByJSPath),
-
-		chromedp.Click(`document.querySelector("#btnEnviar > span")`, chromedp.NodeVisible, chromedp.ByJSPath),
-		chromedp.Sleep(5),
-	)
-	if err != nil {
-		return Invoice{}, err
-	}
 
 	var (
 		dueDate   = ""
@@ -105,7 +47,7 @@ func (flow *Flow) invoiceFlow() (Invoice, error) {
 		outerHTML = ""
 	)
 
-	err = chromedp.Run(flow.c,
+	err := chromedp.Run(flow.c,
 		chromedp.WaitVisible("i.icon-feather-log-out"),
 
 		chromedp.Text(
@@ -139,6 +81,11 @@ func (flow *Flow) invoiceFlow() (Invoice, error) {
 			chromedp.ByJSPath,
 		),
 	)
+
+	if err != nil {
+		return Invoice{}, err
+	}
+
 	if strings.Contains(outerHTML, "A vencer") {
 		status = "pending"
 	}
@@ -148,6 +95,42 @@ func (flow *Flow) invoiceFlow() (Invoice, error) {
 		DueDate: dueDate,
 		Status:  status,
 	}, nil
+}
+
+func (flow *Flow) login() error {
+	output := ""
+	err := chromedp.Run(flow.c,
+		chromedp.Navigate("https://virtual.comgas.com.br/#/comgasvirtual/historicoFaturas"),
+		chromedp.WaitVisible("div.dados-login"),
+		chromedp.Text(
+			`document.querySelector("#loginModal > form > div > div.header-geral > span.label-principal.ng-scope")`,
+			&output,
+			chromedp.ByJSPath,
+		),
+		chromedp.Sleep(5),
+	)
+
+	if err != nil {
+		return err
+	}
+	if !strings.Contains(output, "Bem-vindo") {
+		return fmt.Errorf("failed to load login page")
+	}
+
+	err = chromedp.Run(flow.c,
+		chromedp.Click(`document.querySelector("#cpf")`, chromedp.NodeVisible, chromedp.ByJSPath),
+		chromedp.SendKeys(`document.querySelector("#cpf")`, kb.End+flow.User.CPF, chromedp.ByJSPath),
+
+		chromedp.Click(`document.querySelector("#modalTxtCodigoUsuario")`, chromedp.NodeVisible, chromedp.ByJSPath),
+		chromedp.SendKeys(`document.querySelector("#modalTxtCodigoUsuario")`, kb.End+flow.User.Code, chromedp.ByJSPath),
+
+		chromedp.Click(`document.querySelector("#btnEnviar > span")`, chromedp.NodeVisible, chromedp.ByJSPath),
+		chromedp.Sleep(5),
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 //NewFlow creates a flow with context besides user and invoice data
