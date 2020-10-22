@@ -36,8 +36,28 @@ type UserData struct {
 	Code string `json:"code"`
 }
 
-//InvoiceFlow crawls through the comgas page
+//InvoiceFlow crawls through the enel page
 func (flow *Flow) InvoiceFlow() (Invoice, error) {
+	for i := range flow.cancel {
+		defer flow.cancel[i]()
+	}
+
+	err := flow.login()
+	if err != nil {
+		log.Println(err)
+		return Invoice{}, err
+	}
+
+	invoice, err := flow.invoiceData()
+	if err != nil {
+		log.Println(err)
+		return Invoice{}, err
+	}
+	return invoice, nil
+}
+
+//InvoiceFlow crawls through the comgas page
+func (flow *Flow) invoiceData() (Invoice, error) {
 	log.Println("Starting Invoice Flow")
 
 	var (
