@@ -37,7 +37,8 @@ type UserData struct {
 	Code string `json:"code"`
 }
 
-func (flow *Flow) invoiceFlow() (Invoice, error) {
+//InvoiceFlow crawls through the comgas page
+func (flow *Flow) InvoiceFlow() (Invoice, error) {
 
 	var (
 		dueDate   = ""
