@@ -2,9 +2,8 @@ package comgas
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"log"
 	"strings"
 
 	"github.com/knq/chromedp"
@@ -39,6 +38,7 @@ type UserData struct {
 
 //InvoiceFlow crawls through the comgas page
 func (flow *Flow) InvoiceFlow() (Invoice, error) {
+	log.Println("Starting Invoice Flow")
 
 	var (
 		dueDate   = ""
@@ -90,6 +90,7 @@ func (flow *Flow) InvoiceFlow() (Invoice, error) {
 	if strings.Contains(outerHTML, "A vencer") {
 		status = "pending"
 	}
+	log.Println("Successfully finished Invoice flow")
 	return Invoice{
 		Value:   strings.Replace(strings.TrimPrefix(value, "R$ "), ",", ".", -1),
 		BarCode: strings.Replace(barCode, " ", "", -1),
@@ -99,6 +100,7 @@ func (flow *Flow) InvoiceFlow() (Invoice, error) {
 }
 
 func (flow *Flow) login() error {
+	log.Println("Starting login flow")
 	output := ""
 	err := chromedp.Run(flow.c,
 		chromedp.Navigate("https://virtual.comgas.com.br/#/comgasvirtual/historicoFaturas"),
@@ -131,6 +133,7 @@ func (flow *Flow) login() error {
 	if err != nil {
 		return err
 	}
+	log.Println("Successfully finished login flow")
 	return nil
 }
 
@@ -152,17 +155,4 @@ func setContext(headless bool) (context.Context, []context.CancelFunc) {
 	ctx, cancel = chromedp.NewContext(ctx)
 	outputFunc = append(outputFunc, cancel)
 	return ctx, outputFunc
-}
-
-func setConfig() (UserData, error) {
-	if len(configPath) == 0 {
-		return UserData{}, fmt.Errorf("invalid path; cannot be empty")
-	}
-	jsonFile, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		return UserData{}, err
-	}
-	config := UserData{}
-	err = json.Unmarshal(jsonFile, &config)
-	return config, err
 }
