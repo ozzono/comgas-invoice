@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
-	"github.com/knq/chromedp"
+	"github.com/chromedp/chromedp"
 	"github.com/knq/chromedp/kb"
 )
 
@@ -130,7 +131,7 @@ func (flow *Flow) login() error {
 			&output,
 			chromedp.ByJSPath,
 		),
-		chromedp.Sleep(5),
+		chromedp.Sleep(5*time.Second),
 	)
 
 	if err != nil {
@@ -148,7 +149,7 @@ func (flow *Flow) login() error {
 		chromedp.SendKeys(`document.querySelector("#modalTxtCodigoUsuario")`, kb.End+flow.User.Code, chromedp.ByJSPath),
 
 		chromedp.Click(`document.querySelector("#btnEnviar > span")`, chromedp.NodeVisible, chromedp.ByJSPath),
-		chromedp.Sleep(5),
+		chromedp.Sleep(5*time.Second),
 	)
 	if err != nil {
 		return err
