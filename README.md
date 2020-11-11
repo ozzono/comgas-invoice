@@ -4,6 +4,9 @@
 	
 This package uses [chromedp](https://github.com/chromedp/chromedp) original package and [knp's chromedp](github.com/knq/chromedp/kb) modified package to navigate through the [comgas](https://virtual.comgas.com.br/#/comgasvirtual/historicoFaturas) user page.
 
+Known issues:
+- The comgas home page does not finish the login in headless chromedp.
+
 
 It requires:
 - CPF

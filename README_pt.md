@@ -3,6 +3,9 @@
 ### Esse pacote foi testado com sucesso pela última vez em 2020-11-10.
 Esse pacote usa o [chromedp](https://github.com/chromedp/chromedp) original e o modificado pelo kpn [chromedp](github.com/knq/chromedp/kb) para navegar pelo página de usuário da [comgas](https://virtual.comgas.com.br/#/comgasvirtual/historicoFaturas).
 
+Problemas conhecidos:
+- A página da comgas não conclui o login quando acessada a partir do chrome em background.
+
 
 Esse pacote exige:
 - cpf
