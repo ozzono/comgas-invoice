@@ -21,7 +21,7 @@ type Flow struct {
 	c       context.Context
 	User    UserData
 	Invoice Invoice
-	cancel  []context.CancelFunc
+	cancel  func()
 }
 
 //Invoice has all the invoice data needed for payment
@@ -41,8 +41,10 @@ type UserData struct {
 
 //InvoiceFlow crawls through the enel page
 func (flow *Flow) InvoiceFlow() (Invoice, error) {
-	for i := range flow.cancel {
-		defer flow.cancel[i]()
+	defer flow.cancel()
+
+	if err := flow.checkUserData(); err != nil {
+		return Invoice{}, fmt.Errorf("")
 	}
 
 	err := flow.login()
@@ -207,14 +209,28 @@ func (flow *Flow) login() error {
 	return nil
 }
 
+func (flow *Flow) checkUserData() error {
+	if len(flow.User.CPF) == 0 {
+		return fmt.Errorf("invalid flow.User.CPF; cannot be empty")
+	}
+	if len(flow.User.Code) == 0 {
+		return fmt.Errorf("invalid flow.User.Code; cannot be empty")
+	}
+	if len(flow.User.Name) == 0 {
+		return fmt.Errorf("invalid flow.User.Name; cannot be empty")
+	}
+	return nil
+}
+
 //NewFlow creates a flow with context besides user and invoice data
 func NewFlow(headless bool) Flow {
 	ctx, cancel := setContext(headless)
 	return Flow{c: ctx, cancel: cancel}
 }
 
-func setContext(headless bool) (context.Context, []context.CancelFunc) {
+func setContext(headless bool) (context.Context, func()) {
 	outputFunc := []context.CancelFunc{}
+
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.DisableGPU,
 		// Set the headless flag to false to display the browser window
@@ -224,5 +240,9 @@ func setContext(headless bool) (context.Context, []context.CancelFunc) {
 	outputFunc = append(outputFunc, cancel)
 	ctx, cancel = chromedp.NewContext(ctx)
 	outputFunc = append(outputFunc, cancel)
-	return ctx, outputFunc
+	return ctx, func() {
+		for i := range outputFunc {
+			outputFunc[i]()
+		}
+	}
 }

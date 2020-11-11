@@ -7,7 +7,7 @@ import (
 )
 
 func Test(t *testing.T) {
-	f := NewFlow(true)
+	f := NewFlow(false)
 	user, err := readFile("config_test.json")
 	if err != nil {
 		t.Logf("readFile err: %v", err)
@@ -15,7 +15,7 @@ func Test(t *testing.T) {
 	f.User = user
 	invoice, err := f.InvoiceFlow()
 	if err != nil {
-		t.Logf("f.InvoiceFlow err: %v", err)
+		t.Fatalf("f.InvoiceFlow err: %v", err)
 	}
 	t.Logf("invoice: %#v", invoice)
 }
